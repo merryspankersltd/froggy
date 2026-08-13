@@ -1,0 +1,59 @@
+esphome:
+  name: froggy
+  friendly_name: Froggy
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+logger:
+api:
+ota:
+
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: Europe/Paris
+    on_time_sync:
+      then:
+        - delay: 3s
+        - deep_sleep.enter:
+            id: deep_sleep_1
+            sleep_duration: !lambda |-
+              auto now = id(sntp_time).now();
+              return ((60 - now.second) * 1000) + 5000;
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/dz0ny/esphome-bthome
+      ref: main
+    components: [bthome]
+
+sensor:
+  - platform: dht22
+    pin: GPIO21
+    temperature:
+      id: temp
+      name: "Temperature"
+    humidity:
+      id: hum
+      name: "Humidity"
+    update_interval: 60s
+
+bthome:
+  min_interval: 5s
+  max_interval: 10s
+  sensors:
+    - type: temperature
+      id: temp
+    - type: humidity
+      id: hum
+
+deep_sleep:
+  id: deep_sleep_1
