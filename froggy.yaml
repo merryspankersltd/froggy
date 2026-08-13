@@ -28,7 +28,7 @@ time:
     timezone: Europe/Paris
     on_time_sync:
       then:
-        - delay: 3s
+        - delay: 8s
         - deep_sleep.enter:
             id: deep_sleep_1
             sleep_duration: !lambda |-
@@ -39,11 +39,8 @@ external_components:
   - source:
       type: git
       url: https://github.com/dz0ny/esphome-bthome
-      ref: pull/8/head
+      ref: pull/19/head
     components: [bthome]
-
-esp32_ble:
-  id: ble
 
 sensor:
   - platform: dht
@@ -58,8 +55,12 @@ sensor:
     update_interval: 60s
 
 bthome:
-  min_interval: 5s
-  max_interval: 10s
+  ble_stack: nimble
+  min_interval: 2s
+  max_interval: 4s
+  tx_power: 9
+  retransmit_count: 2
+  retransmit_interval: 400ms
   sensors:
     - type: temperature
       id: temp

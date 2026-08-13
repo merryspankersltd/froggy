@@ -30,14 +30,14 @@ Home Assistant auto-discovers the device via its BTHome integration (through you
 
 ## How it works
 
-- Every ~60s the ESP32 wakes, reads the DHT22, broadcasts BTHome advertisements, then deep sleeps (~10µA)
+- Every ~60s the ESP32 wakes, reads the DHT22, broadcasts BTHome advertisements (NimBLE stack, +9dBm, 2-4s adv interval, 2x retransmit), then deep sleeps (~10µA)
 - `on_time_sync` (SNTP) computes the sleep duration so the next wake lands at the next minute boundary + 5s, self-correcting RTC drift every cycle
 - WiFi/API/OTA stay enabled during the wake window so the device can be reflashed
+- Note: the BLE MAC differs from the WiFi MAC by the last byte (e.g. `...:8E` vs `...:8C`) — use the BLE MAC for debugging scans
 
 ## Battery migration (future)
 
 When moving to battery power:
 - Disable WiFi on boot: `wifi: enable_on_boot: false` and remove `api`/`ota`/`logger`
-- Use the NimBLE stack (`bthome: ble_stack: nimble`)
 - Lower TX power (`bthome: tx_power: -6`)
 - Optionally cap CPU at 80MHz (`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_80`)
