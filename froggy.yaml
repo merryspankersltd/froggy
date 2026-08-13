@@ -39,12 +39,16 @@ external_components:
   - source:
       type: git
       url: https://github.com/dz0ny/esphome-bthome
-      ref: main
+      ref: pull/8/head
     components: [bthome]
 
+esp32_ble:
+  id: ble
+
 sensor:
-  - platform: dht22
+  - platform: dht
     pin: GPIO21
+    model: DHT22
     temperature:
       id: temp
       name: "Temperature"
