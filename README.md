@@ -37,7 +37,7 @@ Home Assistant auto-discovers the device via its BTHome integration (through you
 
 ## Battery migration (future)
 
-`froggy-battery.yaml` is the battery-optimized variant: WiFi/API/OTA removed (flash over serial only), CPU at 80MHz, TX power reduced, fixed 10s wake / 50s sleep cycle (~60s cadence, no SNTP drift correction).
+`froggy-battery.yaml` is the battery-optimized variant: WiFi/API/OTA removed (flash over serial only), CPU at 80MHz, TX power reduced, fixed 10s wake / 290s sleep cycle (~5 min cadence, no SNTP drift correction).
 
 Expected runtime on a 3000-3350 mAh 18650: **~2.5-3 months** (vs ~5 days in the current WiFi-enabled config).
 
