@@ -18,9 +18,15 @@ Bare DHT22 sensors need a 10kΩ pull-up resistor between DATA and 3.3V (most mod
 
 ## Setup
 
-1. `cp secrets.yaml.example secrets.yaml` and fill in your WiFi credentials
-2. Flash: `esphome run froggy.yaml`
-3. Home Assistant auto-discovers the device via its BTHome integration (through your Bluetooth proxy) - no proxy config changes needed
+The config expects these keys in the ESPHome instance's `secrets.yaml` (`/config/esphome/secrets.yaml`):
+
+- `wifi_ssid`, `wifi_password` - WiFi credentials
+- `api_encryption_key` - base64 API encryption key
+- `froggy_ota_password` - per-device OTA password
+
+Flash: `esphome run froggy.yaml`
+
+Home Assistant auto-discovers the device via its BTHome integration (through your Bluetooth proxy) - no proxy config changes needed
 
 ## How it works
 

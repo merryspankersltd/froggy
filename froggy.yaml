@@ -12,8 +12,15 @@ wifi:
   password: !secret wifi_password
 
 logger:
+
+# Enable Home Assistant API
 api:
+  encryption:
+    key: !secret api_encryption_key
+
 ota:
+  - platform: esphome
+    password: !secret froggy_ota_password
 
 time:
   - platform: sntp
