@@ -37,7 +37,19 @@ Home Assistant auto-discovers the device via its BTHome integration (through you
 
 ## Battery migration (future)
 
-When moving to battery power:
-- Disable WiFi on boot: `wifi: enable_on_boot: false` and remove `api`/`ota`/`logger`
-- Lower TX power (`bthome: tx_power: -6`)
-- Optionally cap CPU at 80MHz (`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_80`)
+`froggy-battery.yaml` is the battery-optimized variant: WiFi/API/OTA removed (flash over serial only), CPU at 80MHz, TX power reduced, fixed 10s wake / 50s sleep cycle (~60s cadence, no SNTP drift correction).
+
+Expected runtime on a 3000-3350 mAh 18650: **~2.5-3 months** (vs ~5 days in the current WiFi-enabled config).
+
+### Required hardware changes
+
+- **Power path**: the devkit's AMS1117 regulator draws ~5 mA idle and needs ≥4.4V input (an 18650 only provides 3.0-4.2V). Replace it with a low-quiescent regulator feeding the bare 3.3V rail:
+  - HT7833 (3 µA Iq) — simple LDO, usable while battery is 3.6-4.2V
+  - TPS62742 (360 nA Iq) — buck, full 3.0-4.2V range
+- **Sleep current**: expect ~70 µA in deep sleep (ESP32 ~20 µA + DHT22 ~50 µA quiescent)
+
+### Trade-offs vs `froggy.yaml`
+
+- No OTA/API: reflashing requires the serial cable
+- No SNTP: RTC drifts ~10-20 s/day, so the 1-min cadence slowly shifts (irrelevant for temperature reporting)
+- Lower TX power reduces range (0 dBm is fine at ~1 m from the proxy)
