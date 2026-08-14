@@ -1,5 +1,7 @@
 # Froggy
 
+![status](https://img.shields.io/badge/status-experimental-orange)
+
 Battery-powered **BLE temperature/humidity sensor** (ESP32-WROOM-32D, BTHome v2, deep sleep), picked up by an existing ESPHome Bluetooth proxy and Home Assistant's built-in BTHome integration.
 
 This is the step forward after the classic *ESPHome + DHT22 over WiFi* integration: no ESPHome, no WiFi, no OTA — a bare ESP-IDF firmware, flash-once, optimized for battery life.
