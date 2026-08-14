@@ -95,3 +95,7 @@ Flash once and forget — there is no OTA.
 
 - An ESPHome **Bluetooth proxy** in range (froggy is a pure BLE broadcaster)
 - Home Assistant with the built-in **BTHome** integration (auto-discovers the device, no config needed)
+
+## License
+
+GNU GPL v3 — see [LICENSE](LICENSE).
