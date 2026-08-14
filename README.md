@@ -6,9 +6,13 @@ Battery-powered **BLE temperature/humidity sensor** (ESP32-WROOM-32D, BTHome v2,
 
 This is the step forward after the classic *ESPHome + DHT22 over WiFi* integration: no ESPHome, no WiFi, no OTA — a bare ESP-IDF firmware, flash-once, optimized for battery life.
 
-> **Experimental.** Pre-coded for I2C sensors (AHT20/AHT21 or SHT30/SHT31) — **not DHT22**. No new sensor is sourced yet, so this firmware has not been flashed or measured on hardware.
+> **Experimental.** Pre-coded for I2C sensors (AHT20/AHT21 or SHT30/SHT31) — **not DHT22**. The firmware compiles clean (ESP-IDF v5.4.1) but has not been flashed or measured on hardware yet.
 
 ## Testing status
+
+### Compile-tested
+
+- Clean build with **ESP-IDF v5.4.1** (`idf.py build` passes; bootloader + app image produced)
 
 ### Validated on hardware (via the ESPHome prototype, same board)
 
@@ -20,9 +24,9 @@ This is the step forward after the classic *ESPHome + DHT22 over WiFi* integrati
 - Signal improvement from tx_power/retransmit tuning: behind-wall arrival rate measured at 15% → 33%, median gap 297 s → 170 s
 - RSSI behind a wall: ~-81 dBm (old firmware) / ~-89 dBm (new firmware)
 
-### NOT tested (froggy_ble firmware)
+### NOT tested yet (froggy_ble firmware)
 
-- The firmware **compiles clean** with ESP-IDF v5.4.1 (verified), but has never been flashed or run on hardware
+- Never flashed or run on hardware
 - AHT20/SHT30 I2C drivers — no sensor sourced
 - Battery ADC + divider (GPIO34) and battery % estimation
 - Sensor power rail switching (GPIO23)
@@ -106,7 +110,7 @@ Uncomment exactly one block in `main/sensor.h`:
 
 ### Flash
 
-Requires ESP-IDF v5.2+:
+Requires ESP-IDF v5.2+ (tested with **v5.4.1**):
 
 ```sh
 idf.py build
