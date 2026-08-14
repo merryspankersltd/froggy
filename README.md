@@ -22,7 +22,7 @@ This is the step forward after the classic *ESPHome + DHT22 over WiFi* integrati
 
 ### NOT tested (froggy_ble firmware)
 
-- The firmware has **never been compiled** (no ESP-IDF toolchain here yet)
+- The firmware **compiles clean** with ESP-IDF v5.4.1 (verified), but has never been flashed or run on hardware
 - AHT20/SHT30 I2C drivers — no sensor sourced
 - Battery ADC + divider (GPIO34) and battery % estimation
 - Sensor power rail switching (GPIO23)

@@ -16,7 +16,7 @@ esp_err_t battery_init(void)
         .unit_id = ADC_UNIT_1,
         .ulp_mode = ADC_ULP_MODE_DISABLE,
     };
-    ESP_RETURN_ON_ERROR(adc_oneshot_new_unit(&unit_cfg), TAG, "adc unit");
+    ESP_RETURN_ON_ERROR(adc_oneshot_new_unit(&unit_cfg, &s_adc), TAG, "adc unit");
 
     adc_oneshot_chan_cfg_t chan_cfg = {
         .atten = ADC_ATTEN_DB_12,
@@ -25,15 +25,15 @@ esp_err_t battery_init(void)
     ESP_RETURN_ON_ERROR(adc_oneshot_config_channel(s_adc, BAT_VBAT_GPIO, &chan_cfg),
                         TAG, "adc channel");
 
-    adc_cali_curve_fitting_config_t cali_cfg = {
+    adc_cali_line_fitting_config_t cali_cfg = {
         .unit_id = ADC_UNIT_1,
-        .chan = BAT_VBAT_GPIO,
         .atten = ADC_ATTEN_DB_12,
         .bitwidth = ADC_BITWIDTH_12,
+        .default_vref = 1100,
     };
     // Calibration may fail on chips without eFuse data - voltage is then
     // less accurate but the battery % estimate still works.
-    if (adc_cali_create_scheme_curve_fitting(&cali_cfg, &s_cali) == ESP_OK)
+    if (adc_cali_create_scheme_line_fitting(&cali_cfg, &s_cali) == ESP_OK)
         return ESP_OK;
     ESP_LOGW(TAG, "no eFuse calibration, using raw readings");
     s_cali = NULL;

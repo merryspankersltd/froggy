@@ -1,9 +1,8 @@
 #include <string.h>
 
 #include "driver/gpio.h"
-#include "esp_deep_sleep.h"
-#include "esp_log.h"
 #include "esp_sleep.h"
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "nvs_flash.h"
@@ -124,9 +123,10 @@ void app_main(void)
     // Cut sensor power: 0 uA in deep sleep
     sensor_power_off();
 
-    // Schedule next wake (and optionally the button)
-    esp_deep_sleep_enable_timer((uint64_t)CADENCE_S * 1000000ULL);
-    esp_deep_sleep_enable_gpio_wakeup(1ULL << WAKE_GPIO, ESP_GPIO_WAKEUP_GPIO_HIGH);
+    // Schedule next wake (and optionally the button). On ESP32, deep sleep
+    // GPIO wakeup goes through the EXT1 RTC interface (GPIO13 is RTC_GPIO13).
+    esp_sleep_enable_timer_wakeup((uint64_t)CADENCE_S * 1000000ULL);
+    esp_sleep_enable_ext1_wakeup(1ULL << WAKE_GPIO, ESP_EXT1_WAKEUP_ANY_HIGH);
 
     ESP_LOGW(TAG, "deep sleep %d s", CADENCE_S);
     esp_deep_sleep_start();
