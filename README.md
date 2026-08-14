@@ -1,55 +1,97 @@
 # Froggy
 
-ESP32-WROOM-32D + DHT22 temperature/humidity sensor broadcasting via BTHome BLE advertisements, picked up by an existing ESPHome Bluetooth proxy and Home Assistant's built-in BTHome integration.
+Battery-powered **BLE temperature/humidity sensor** (ESP32-WROOM-32D, BTHome v2, deep sleep), picked up by an existing ESPHome Bluetooth proxy and Home Assistant's built-in BTHome integration.
 
-- Data pin: **GPIO21**
-- Broadcasts every **1 minute**
-- Deep sleep between broadcasts with **NTP drift correction** (each wake re-syncs via SNTP, sleep duration computed to land on the next minute boundary + 5s)
+This is the step forward after the classic *ESPHome + DHT22 over WiFi* integration: no ESPHome, no WiFi, no OTA — a bare ESP-IDF firmware, flash-once, optimized for battery life.
 
-## Wiring
+> **Experimental.** Pre-coded for I2C sensors (AHT20/AHT21 or SHT30/SHT31) — **not DHT22**. No new sensor is sourced yet, so this firmware has not been flashed or measured on hardware.
 
-| DHT22 | ESP32 |
-|-------|-------|
-| VCC   | 3.3V  |
-| GND   | GND   |
-| DATA  | GPIO21 |
+## Hardware
 
-Bare DHT22 sensors need a 10kΩ pull-up resistor between DATA and 3.3V (most modules have it built in).
+- ESP32-WROOM-32D (any classic ESP32 dev board without a noisy regulator for battery use — see Power)
+- I2C temperature/humidity sensor, exactly one of:
+  - **AHT20/AHT21** (addr `0x38`)
+  - **SHT30/SHT31** (addr `0x44`)
+- 2x resistors for the VBAT voltage divider (100 kΩ / 47 kΩ)
+- Battery: 18650 Li-Ion or LiPo (optional solar panel)
 
-## Setup
+### Wiring
 
-The config expects these keys in the ESPHome instance's `secrets.yaml` (`/config/esphome/secrets.yaml`):
+| Signal | ESP32 |
+|--------|-------|
+| SDA    | GPIO21 |
+| SCL    | GPIO22 |
+| Sensor power rail | GPIO23 (turns the sensor fully off in deep sleep) |
+| VBAT divider (100 kΩ → GPIO, 47 kΩ → GND) | GPIO34 (ADC1_CH6) |
+| Wake button (optional, GPIO13 to 3.3V) | GPIO13 (forces an immediate broadcast) |
 
-- `wifi_ssid`, `wifi_password` - WiFi credentials
-- `api_encryption_key` - base64 API encryption key
-- `froggy_ota_password` - per-device OTA password
+I2C breakouts need pull-ups (most modules have them built in). The sensor **must** be on a GPIO-switched rail — its quiescent current would otherwise dominate the power budget.
 
-Flash: `esphome run froggy.yaml`
+## Power budget
 
-Home Assistant auto-discovers the device via its BTHome integration (through your Bluetooth proxy) - no proxy config changes needed
+One wake cycle (5 min cadence): sensor rail on ~200 ms (I2C read), broadcast ~10 s, then deep sleep.
 
-## How it works
+| Component | Current |
+|-----------|---------|
+| Deep sleep (ESP32 + low-quiescent LDO) | ~22-25 µA |
+| I2C sensor (rail off in sleep) | 0 µA |
+| Wake burst (boot + read + adv), amortized over 300 s | +~0.06 µA |
+| **Average** | **~25 µA** |
 
-- Every ~60s the ESP32 wakes, reads the DHT22, broadcasts BTHome advertisements (NimBLE stack, +9dBm, 2-4s adv interval, 2x retransmit), then deep sleeps (~10µA)
-- `on_time_sync` (SNTP) computes the sleep duration so the next wake lands at the next minute boundary + 5s, self-correcting RTC drift every cycle
-- WiFi/API/OTA stay enabled during the wake window so the device can be reflashed
-- Note: the BLE MAC differs from the WiFi MAC by the last byte (e.g. `...:8E` vs `...:8C`) — use the BLE MAC for debugging scans
+| Battery | Expected runtime |
+|---------|------------------|
+| 18650 (3000 mAh) | ~5 yr (self-discharge-limited) |
+| 700 mAh LiPo | ~3 yr |
+| Solar + small panel | sustainable (needs only ~0.6 mAh/day) |
 
-## Battery migration (future)
+Notes:
+- The DHT22 route would add 50-80 µA quiescent (or a 2.5 s wake at 1.2 mA) — ~3-10x the entire sleep budget. I2C + power rail is the whole point.
+- Devkit regulators (AMS1117) draw ~5 mA idle and need ≥4.4 V: replace with HT7833 (3 µA Iq) or TPS62742 (360 nA Iq, full 3.0-4.2 V range) for battery operation.
+- Wake cadence is configurable (`CADENCE_S` in `main/main.c`, default 300 s).
 
-`froggy-battery.yaml` is the battery-optimized variant: WiFi/API/OTA removed (flash over serial only), CPU at 80MHz, TX power reduced, fixed 10s wake / 290s sleep cycle (~5 min cadence, no SNTP drift correction).
+## Firmware
 
-Expected runtime on a 3000-3350 mAh 18650: **~2.5-3 months** (vs ~5 days in the current WiFi-enabled config).
+Bare ESP-IDF (no ESPHome, no WiFi, no OTA — reflashing requires the serial cable, by design).
 
-### Required hardware changes
+```
+main/
+├── main.c          boot → power rail on → read → BTHome advertise → deep sleep
+├── bthome.c/.h     BTHome v2 payload encoder (temp, humidity, battery %/voltage)
+├── sensor.c/.h     sensor dispatch + selection blocks (AHT20 vs SHT3X)
+├── aht20.c/.h      hand-rolled I2C driver (0x38)
+├── sht3x.c/.h      hand-rolled I2C driver (0x44)
+└── battery.c/.h    VBAT divider read + Li-Ion % estimation
+```
 
-- **Power path**: the devkit's AMS1117 regulator draws ~5 mA idle and needs ≥4.4V input (an 18650 only provides 3.0-4.2V). Replace it with a low-quiescent regulator feeding the bare 3.3V rail:
-  - HT7833 (3 µA Iq) — simple LDO, usable while battery is 3.6-4.2V
-  - TPS62742 (360 nA Iq) — buck, full 3.0-4.2V range
-- **Sleep current**: expect ~70 µA in deep sleep (ESP32 ~20 µA + DHT22 ~50 µA quiescent)
+### Sensor selection
 
-### Trade-offs vs `froggy.yaml`
+Uncomment exactly one block in `main/sensor.h`:
 
-- No OTA/API: reflashing requires the serial cable
-- No SNTP: RTC drifts ~10-20 s/day, so the 1-min cadence slowly shifts (irrelevant for temperature reporting)
-- Lower TX power reduces range (0 dBm is fine at ~1 m from the proxy)
+```c
+// SENSOR SELECTION — uncomment EXACTLY ONE
+#define SENSOR_AHT20
+// #define SENSOR_SHT3X
+```
+
+### Behavior
+
+- BTHome v2 advertisement (service UUID `0xFCD2`, unencrypted): temperature (0.01 °C), humidity (0.01 %), battery percentage, battery voltage
+- Deep sleep between broadcasts; `CADENCE_S` default 300 s
+- GPIO13 wake (button): broadcasts immediately, then resumes the schedule — useful for debugging
+- Optional power rail: sensor fully off in deep sleep (0 µA)
+
+### Flash
+
+Requires ESP-IDF v5.2+:
+
+```sh
+idf.py build
+idf.py -p /dev/ttyUSB0 flash
+```
+
+Flash once and forget — there is no OTA.
+
+## Prerequisites
+
+- An ESPHome **Bluetooth proxy** in range (froggy is a pure BLE broadcaster)
+- Home Assistant with the built-in **BTHome** integration (auto-discovers the device, no config needed)
