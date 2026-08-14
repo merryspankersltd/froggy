@@ -8,6 +8,28 @@ This is the step forward after the classic *ESPHome + DHT22 over WiFi* integrati
 
 > **Experimental.** Pre-coded for I2C sensors (AHT20/AHT21 or SHT30/SHT31) — **not DHT22**. No new sensor is sourced yet, so this firmware has not been flashed or measured on hardware.
 
+## Testing status
+
+### Validated on hardware (via the ESPHome prototype, same board)
+
+- BTHome v2 broadcast picked up by the Bluetooth proxy and HA's BTHome integration
+- Wake cadence (device wakes every ~60 s, arrivals in multiples of ~60 s)
+- Deep sleep + periodic wake cycle
+- Serial flashing procedure (CH340 over USB)
+- DHT22 reads (temperature/humidity)
+- Signal improvement from tx_power/retransmit tuning: behind-wall arrival rate measured at 15% → 33%, median gap 297 s → 170 s
+- RSSI behind a wall: ~-81 dBm (old firmware) / ~-89 dBm (new firmware)
+
+### NOT tested (froggy_ble firmware)
+
+- The firmware has **never been compiled** (no ESP-IDF toolchain here yet)
+- AHT20/SHT30 I2C drivers — no sensor sourced
+- Battery ADC + divider (GPIO34) and battery % estimation
+- Sensor power rail switching (GPIO23)
+- GPIO13 wake button
+- Actual deep-sleep current and battery runtime (power budget above is estimated)
+- NimBLE advertising from this codebase (only the ESPHome/BTHome path was validated)
+
 ## Hardware
 
 - ESP32-WROOM-32D (any classic ESP32 dev board without a noisy regulator for battery use — see Power)
