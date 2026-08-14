@@ -57,10 +57,10 @@ sensor:
 bthome:
   ble_stack: nimble
   min_interval: 2s
-  max_interval: 4s
+  max_interval: 10s
   tx_power: 9
-  retransmit_count: 2
-  retransmit_interval: 400ms
+  retransmit_count: 5
+  retransmit_interval: 600ms
   sensors:
     - type: temperature
       id: temp
